@@ -1,2 +1,2 @@
 # coprime
-Golang wrapper around coinbase prime 
+Golang wrapper around the Coinbase Prime API
