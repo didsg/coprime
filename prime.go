@@ -1,60 +1,167 @@
 package coprime
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
-const (
-    API_URL = "https://api.prime.coinbase.com"
-    API_VERSION = "v1"
-
-)
-var methods = []string{
-    "allocations",
-    "getAlloctations",
+type Client struct {
+	BaseURL    string
+	Secret     string
+	Key        string
+	Passphrase string
+	HTTPClient *http.Client
+	RetryCount int
 }
 
-type Coprime struct {
-    BaseURL string
-    Secret string
-    Key string
-    Passphrase string
-    HTTPClient *http.Client
-    RetryCount int
+type ClientConfig struct {
+	BaseURL    string
+	Key        string
+	Passphrase string
+	Secret     string
 }
 
-func New(secret, key, passphrase string) *Coprime {
+func NewClient() *Client {
+	baseURL := os.Getenv("COINBASE_PRO_BASEURL")
+	if baseURL == "" {
+		baseURL = "https://api.prime.coinbase.com"
+	}
 
-    cp := Coprime {
-        BaseURL: API_URL,
-        Secret: secret,
-        Key: key,
-        Passphrase: passphrase,
-        HTTPClient: &http.Client{
-            Timeout: 15 * time.Second,
-        },
-        RetryCount: 0,
+	client := Client{
+		BaseURL:    baseURL,
+		Key:        os.Getenv("COINBASE_PRO_KEY"),
+		Passphrase: os.Getenv("COINBASE_PRO_PASSPHRASE"),
+		Secret:     os.Getenv("COINBASE_PRO_SECRET"),
+		HTTPClient: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+		RetryCount: 0,
+	}
 
-    }
-    return &cp
+	if os.Getenv("COINBASE_PRO_SANDBOX") == "1" {
+		client.UpdateConfig(&ClientConfig{
+			BaseURL: "https://api-public.sandbox.pro.coinbase.com",
+		})
+	}
+
+	return &client
 }
 
-func (c *Coprime) SetBaseURL(url string) {
-    c.BaseURL = url
+func (c *Client) UpdateConfig(config *ClientConfig) {
+	baseURL := config.BaseURL
+	key := config.Key
+	passphrase := config.Passphrase
+	secret := config.Secret
+
+	if baseURL != "" {
+		c.BaseURL = baseURL
+	}
+	if key != "" {
+		c.Key = key
+	}
+	if passphrase != "" {
+		c.Passphrase = passphrase
+	}
+	if secret != "" {
+		c.Secret = secret
+	}
 }
 
-func (c *Coprime) SetRetryCount(retries int) {
-    c.RetryCount = retries
+func (c *Client) Request(method string, url string,
+	params, result interface{}) (res *http.Response, err error) {
+	for i := 0; i < c.RetryCount+1; i++ {
+		retryDuration := time.Duration((math.Pow(2, float64(i))-1)/2*1000) * time.Millisecond
+		time.Sleep(retryDuration)
+
+		res, err = c.request(method, url, params, result)
+		if res != nil && res.StatusCode == 429 {
+			continue
+		} else {
+			break
+		}
+	}
+
+	return res, err
 }
 
-fung (C *Coprime) getHeaders() {
-    h: make(map[string]string)
-    h["CB-ACCESS-KEY"] = c.Key
-	h["CB-ACCESS-PASSPHRASE"] = c.Passphrase
-	h["CB-ACCESS-TIMESTAMP"] = timestamp
+func (c *Client) request(method string, url string,
+	params, result interface{}) (res *http.Response, err error) {
+	var data []byte
+	body := bytes.NewReader(make([]byte, 0))
 
-    message := fmt.Sprintf(
+	if params != nil {
+		data, err = json.Marshal(params)
+		if err != nil {
+			return res, err
+		}
+		body = bytes.NewReader(data)
+	}
+
+	fullURL := fmt.Sprintf("%s%s", c.BaseURL, url)
+	req, err := http.NewRequest(method, fullURL, body)
+	if err != nil {
+		return res, err
+	}
+
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	h, err := c.Headers(method, url, timestamp, string(data))
+	if err != nil {
+		return res, err
+	}
+
+
+	for k, v := range h {
+		req.Header.Add(k, v)
+	}
+
+	res, err = c.HTTPClient.Do(req)
+	if err != nil {
+		return res, err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		defer res.Body.Close()
+		coinbaseError := Error{}
+		decoder := json.NewDecoder(res.Body)
+		if err := decoder.Decode(&coinbaseError); err != nil {
+			return res, err
+		}
+		return res, error(coinbaseError)
+	}
+
+	if result != nil {
+		decoder := json.NewDecoder(res.Body)
+		if err = decoder.Decode(result); err != nil {
+			return res, err
+		}
+	}
+
+
+	return res, nil
+}
+
+// Headers generates a map that can be used as headers to authenticate a request
+func (c *Client) Headers(method, url, timestamp, data string) (map[string]string, error) {
+	h := make(map[string]string)
+
+	h["X-CB-ACCESS-KEY"] = c.Key
+	h["X-CB-ACCESS-PASSPHRASE"] = c.Passphrase
+	h["X-CB-ACCESS-TIMESTAMP"] = timestamp
+
+	message := fmt.Sprintf(
 		"%s%s%s%s",
 		timestamp,
 		method,
@@ -62,9 +169,46 @@ fung (C *Coprime) getHeaders() {
 		data,
 	)
 
-
+	sig, err := generateSig(message, c.Secret)
+	if err != nil {
+		return nil, err
+	}
+	h["X-CB-ACCESS-SIGNATURE"] = sig
+	return h, nil
 }
 
 
+
+
+func (c *Client) GetTime() (ServerTime, error) {
+	var serverTime ServerTime
+
+	url := fmt.Sprintf("/v1/time")
+	_, err := c.Request("GET", url, nil, &serverTime)
+	return serverTime, err
+}
+
+func (c *Client) GetPortfolios() (error) {
+
+    var meow interface{}
+	url := fmt.Sprintf("/v1/portfolios")
+	_, err := c.Request("GET", url, nil, meow)
+    return err
+}
+
+
+type ServerTime struct {
+	ISO   string  `json:"iso"`
+	Epoch float64 `json:"epoch,number"`
+}
+
+
+type Error struct {
+	Message string `json:"message"`
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
 
 
