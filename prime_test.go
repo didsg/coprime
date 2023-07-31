@@ -25,6 +25,16 @@ func getClient() *Client {
 
 }
 
+func getPortfolioID() string {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+    portfolioID := os.Getenv("PORTFOLIO_ID")
+    return portfolioID
+}
+
 func TestGetPortfolios(t *testing.T) {
 	client := getClient()
 	portfolios, err := client.GetPortfolios()
@@ -42,4 +52,26 @@ func TestTime(t *testing.T) {
 		log.Fatalln(err)
 	}
     fmt.Println(time)
+}
+
+
+func TestGetProducts(t *testing.T) {
+    client := getClient()
+    portfolioID := getPortfolioID()
+    products, err := client.GetAvailableProducts(portfolioID)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(products)
+
+}
+
+func TestGetBook(t *testing.T) {
+    client := getClient()
+
+    products, err := client.GetAllProducts()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(products)
 }

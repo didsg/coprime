@@ -116,7 +116,6 @@ func (c *Client) request(method string, apiType string, url string,
 		log.Fatal(err)
 	}
 	_ = res.Body.Close()
-
 	if res.StatusCode != 200 {
 		coinbaseError := Error{}
 		if err := json.Unmarshal(bodyBytes, &coinbaseError); err != nil {
