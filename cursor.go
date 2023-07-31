@@ -5,23 +5,36 @@ import (
 )
 
 type Cursor struct {
-	Client     *Client
+	Client *Client
+
 	Pagination *PaginationParams
-	Method     string
-	Params     interface{}
-	URL        string
-	HasMore    bool
+
+	Method string
+
+	Params interface{}
+
+	URL string
+
+	HasMore bool
 }
 
 func NewCursor(client *Client, method, url string,
+
 	paginationParams *PaginationParams) *Cursor {
+
 	return &Cursor{
-		Client:     client,
-		Method:     method,
-		URL:        url,
+
+		Client: client,
+
+		Method: method,
+
+		URL: url,
+
 		Pagination: paginationParams,
-		HasMore:    true,
+
+		HasMore: true,
 	}
+
 }
 
 func (c *Cursor) Page(i interface{}, direction string) error {
@@ -29,8 +42,7 @@ func (c *Cursor) Page(i interface{}, direction string) error {
 	if c.Pagination.Encode(direction) != "" {
 		url = fmt.Sprintf("%s?%s", c.URL, c.Pagination.Encode(direction))
 	}
-
-	res, err := c.Client.Request(c.Method, url, c.Params, i)
+	res, err := c.Client.Request(c.Method, "pro", url, c.Params, i)
 	if err != nil {
 		c.HasMore = false
 		return err
@@ -38,18 +50,20 @@ func (c *Cursor) Page(i interface{}, direction string) error {
 
 	c.Pagination.Before = res.Header.Get("CB-BEFORE")
 	c.Pagination.After = res.Header.Get("CB-AFTER")
-
 	if c.Pagination.Done(direction) {
 		c.HasMore = false
 	}
-
 	return nil
 }
 
 func (c *Cursor) NextPage(i interface{}) error {
+
 	return c.Page(i, "next")
+
 }
 
 func (c *Cursor) PrevPage(i interface{}) error {
+
 	return c.Page(i, "prev")
+
 }

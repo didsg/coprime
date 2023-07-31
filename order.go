@@ -23,15 +23,15 @@ type Order struct {
 	Funds          string `json:"funds,omitempty"`
 	SpecifiedFunds string `json:"specified_funds,omitempty"`
 	// Response Fields
-	ID            string `json:"id"`
-	Status        string `json:"status,omitempty"`
-	Settled       bool   `json:"settled,omitempty"`
-	DoneReason    string `json:"done_reason,omitempty"`
-	DoneAt        time.Time   `json:"done_at,string,omitempty"`
-	CreatedAt     time.Time   `json:"created_at,string,omitempty"`
-	FillFees      string `json:"fill_fees,omitempty"`
-	FilledSize    string `json:"filled_size,omitempty"`
-	ExecutedValue string `json:"executed_value,omitempty"`
+	ID            string    `json:"id"`
+	Status        string    `json:"status,omitempty"`
+	Settled       bool      `json:"settled,omitempty"`
+	DoneReason    string    `json:"done_reason,omitempty"`
+	DoneAt        time.Time `json:"done_at,string,omitempty"`
+	CreatedAt     time.Time `json:"created_at,string,omitempty"`
+	FillFees      string    `json:"fill_fees,omitempty"`
+	FilledSize    string    `json:"filled_size,omitempty"`
+	ExecutedValue string    `json:"executed_value,omitempty"`
 }
 
 type CancelAllOrdersParams struct {
@@ -52,13 +52,13 @@ func (c *Client) CreateOrder(newOrder *Order) (Order, error) {
 	}
 
 	url := fmt.Sprintf("/v1/orders")
-	_, err := c.Request("POST", url, newOrder, &savedOrder)
+	_, err := c.Request("POST", "prime", url, newOrder, &savedOrder)
 	return savedOrder, err
 }
 
 func (c *Client) CancelOrder(id string) error {
 	url := fmt.Sprintf("/v1/orders/%s", id)
-	_, err := c.Request("DELETE", url, nil, nil)
+	_, err := c.Request("DELETE", "prime", url, nil, nil)
 	return err
 }
 
@@ -70,7 +70,7 @@ func (c *Client) CancelAllOrders(p ...CancelAllOrdersParams) ([]string, error) {
 		url = fmt.Sprintf("%s?product_id=%s", url, p[0].ProductID)
 	}
 
-	_, err := c.Request("DELETE", url, nil, &orderIDs)
+	_, err := c.Request("DELETE", "prime", url, nil, &orderIDs)
 	return orderIDs, err
 }
 
@@ -78,7 +78,7 @@ func (c *Client) GetOrder(id string) (Order, error) {
 	var savedOrder Order
 
 	url := fmt.Sprintf("/v1/orders/%s", id)
-	_, err := c.Request("GET", url, nil, &savedOrder)
+	_, err := c.Request("GET", "prime", url, nil, &savedOrder)
 	return savedOrder, err
 }
 

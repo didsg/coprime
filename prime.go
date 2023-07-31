@@ -3,16 +3,19 @@ package coprime
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 )
 
 type Client struct {
-	BaseURL    string
+	ProURL     string
+	PrimeURL   string
 	Secret     string
 	Key        string
 	Passphrase string
@@ -27,59 +30,30 @@ type ClientConfig struct {
 	Secret     string
 }
 
-func NewClient() *Client {
-	baseURL := os.Getenv("COINBASE_PRO_BASEURL")
-	if baseURL == "" {
-		baseURL = "https://api.prime.coinbase.com"
-	}
+func NewClient(primeURL, proURL, primeKey, primePass, primeSecret string) *Client {
 
 	client := Client{
-		BaseURL:    baseURL,
-		Key:        os.Getenv("COINBASE_PRO_KEY"),
-		Passphrase: os.Getenv("COINBASE_PRO_PASSPHRASE"),
-		Secret:     os.Getenv("COINBASE_PRO_SECRET"),
+		PrimeURL:   primeURL,
+		ProURL:     proURL,
+		Key:        primeKey,
+		Passphrase: primePass,
+		Secret:     primeSecret,
 		HTTPClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
 		RetryCount: 0,
 	}
 
-	if os.Getenv("COINBASE_PRO_SANDBOX") == "1" {
-		client.UpdateConfig(&ClientConfig{
-			BaseURL: "https://api-public.sandbox.pro.coinbase.com",
-		})
-	}
-
 	return &client
 }
 
-func (c *Client) UpdateConfig(config *ClientConfig) {
-	baseURL := config.BaseURL
-	key := config.Key
-	passphrase := config.Passphrase
-	secret := config.Secret
-
-	if baseURL != "" {
-		c.BaseURL = baseURL
-	}
-	if key != "" {
-		c.Key = key
-	}
-	if passphrase != "" {
-		c.Passphrase = passphrase
-	}
-	if secret != "" {
-		c.Secret = secret
-	}
-}
-
-func (c *Client) Request(method string, url string,
+func (c *Client) Request(method string, apiType string, url string,
 	params, result interface{}) (res *http.Response, err error) {
 	for i := 0; i < c.RetryCount+1; i++ {
 		retryDuration := time.Duration((math.Pow(2, float64(i))-1)/2*1000) * time.Millisecond
 		time.Sleep(retryDuration)
 
-		res, err = c.request(method, url, params, result)
+		res, err = c.request(method, apiType, url, params, result)
 		if res != nil && res.StatusCode == 429 {
 			continue
 		} else {
@@ -90,8 +64,10 @@ func (c *Client) Request(method string, url string,
 	return res, err
 }
 
-func (c *Client) request(method string, url string,
+
+func (c *Client) request(method string, apiType string, url string,
 	params, result interface{}) (res *http.Response, err error) {
+
 	var data []byte
 	body := bytes.NewReader(make([]byte, 0))
 
@@ -102,15 +78,21 @@ func (c *Client) request(method string, url string,
 		}
 		body = bytes.NewReader(data)
 	}
-
-	fullURL := fmt.Sprintf("%s%s", c.BaseURL, url)
+	var fullURL string
+	switch apiType {
+	case "pro":
+		fullURL = fmt.Sprintf("%s%s", c.ProURL, url)
+	case "prime":
+		fullURL = fmt.Sprintf("%s%s", c.PrimeURL, url)
+	default:
+		return nil, errors.New("Invalid api type, please use pro or prime")
+	}
 	req, err := http.NewRequest(method, fullURL, body)
 	if err != nil {
 		return res, err
 	}
 
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
@@ -119,7 +101,6 @@ func (c *Client) request(method string, url string,
 	if err != nil {
 		return res, err
 	}
-
 
 	for k, v := range h {
 		req.Header.Add(k, v)
@@ -130,25 +111,25 @@ func (c *Client) request(method string, url string,
 		return res, err
 	}
 
-	defer res.Body.Close()
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_ = res.Body.Close()
 
 	if res.StatusCode != 200 {
-		defer res.Body.Close()
 		coinbaseError := Error{}
-		decoder := json.NewDecoder(res.Body)
-		if err := decoder.Decode(&coinbaseError); err != nil {
+		if err := json.Unmarshal(bodyBytes, &coinbaseError); err != nil {
 			return res, err
 		}
-		return res, error(coinbaseError)
+		return res, fmt.Errorf("%v", coinbaseError)
 	}
 
 	if result != nil {
-		decoder := json.NewDecoder(res.Body)
-		if err = decoder.Decode(result); err != nil {
+		if err = json.Unmarshal(bodyBytes, result); err != nil {
 			return res, err
 		}
 	}
-
 
 	return res, nil
 }
@@ -177,31 +158,18 @@ func (c *Client) Headers(method, url, timestamp, data string) (map[string]string
 	return h, nil
 }
 
-
-
-
 func (c *Client) GetTime() (ServerTime, error) {
 	var serverTime ServerTime
 
-	url := fmt.Sprintf("/v1/time")
-	_, err := c.Request("GET", url, nil, &serverTime)
+	url := fmt.Sprintf("/time")
+	_, err := c.Request("GET", "pro", url, nil, &serverTime)
 	return serverTime, err
 }
-
-func (c *Client) GetPortfolios() (error) {
-
-    var meow interface{}
-	url := fmt.Sprintf("/v1/portfolios")
-	_, err := c.Request("GET", url, nil, meow)
-    return err
-}
-
 
 type ServerTime struct {
 	ISO   string  `json:"iso"`
 	Epoch float64 `json:"epoch,number"`
 }
-
 
 type Error struct {
 	Message string `json:"message"`
@@ -210,5 +178,3 @@ type Error struct {
 func (e Error) Error() string {
 	return e.Message
 }
-
-
