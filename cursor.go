@@ -5,34 +5,22 @@ import (
 )
 
 type Cursor struct {
-	Client *Client
-
+	Client     *Client
 	Pagination *PaginationParams
-
-	Method string
-
-	Params interface{}
-
-	URL string
-
-	HasMore bool
+	Method     string
+	Params     interface{}
+	URL        string
+	HasMore    bool
 }
 
-func NewCursor(client *Client, method, url string,
-
-	paginationParams *PaginationParams) *Cursor {
+func NewCursor(client *Client, method, url string, paginationParams *PaginationParams) *Cursor {
 
 	return &Cursor{
-
-		Client: client,
-
-		Method: method,
-
-		URL: url,
-
+		Client:     client,
+		Method:     method,
+		URL:        url,
 		Pagination: paginationParams,
-
-		HasMore: true,
+		HasMore:    true,
 	}
 
 }
@@ -57,13 +45,9 @@ func (c *Cursor) Page(i interface{}, direction string) error {
 }
 
 func (c *Cursor) NextPage(i interface{}) error {
-
 	return c.Page(i, "next")
-
 }
 
 func (c *Cursor) PrevPage(i interface{}) error {
-
 	return c.Page(i, "prev")
-
 }

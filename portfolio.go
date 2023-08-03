@@ -6,16 +6,14 @@ import (
 )
 
 type Portfolio struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Entity       string `json:"entity_id"`
-	Organization string `json:"organization_id"`
+	Portfolio struct {
+		ID           string `json:"id"`
+		Name         string `json:"name"`
+		Entity       string `json:"entity_id"`
+		Organization string `json:"organization_id"`
+	} `json:"portfolio"`
 }
 
-
-// type Portfolios struct {
-// 	Portfolios []Portfolio `json:"portfolios"`
-// }
 type Portfolios struct {
 	Portfolios []struct {
 		ID             string `json:"id"`
@@ -76,14 +74,24 @@ func (c *Client) GetPortfolios() (Portfolios, error) {
 
 }
 
-func (c *Client) GetPortfolioBalances(portfolio_id string, currency string) (PortfolioBalances, error) {
+func (c *Client) GetPortfolio(portfolioID string) (Portfolio, error) {
+	// var portfolio Portfolio
+	var portfolio Portfolio
+	requestURL := fmt.Sprintf("/v1/portfolios/%s", portfolioID)
+
+	_, err := c.Request("GET", "prime", requestURL, nil, &portfolio)
+	return portfolio, err
+}
+
+func (c *Client) GetPortfolioBalances(portfolio_id string, currency ...string) (PortfolioBalances, error) {
 
 	var portfolio_balances PortfolioBalances
-
-	url := "/v1/portfolios/:" + portfolio_id + "/balances?symbols=" + currency + "&balance_type=TRADING_BALANCES"
-
+	ccy := ""
+	if len(currency) > 0 {
+		ccy = fmt.Sprintf("&symbols=%s", currency[0])
+	}
+	url := fmt.Sprintf("/v1/portfolios/%s/balances?balance_type=TRADING_BALANCES%s", portfolio_id, ccy)
 	_, err := c.Request("GET", "prime", url, nil, &portfolio_balances)
-
 	return portfolio_balances, err
 
 }
@@ -91,34 +99,21 @@ func (c *Client) GetPortfolioBalances(portfolio_id string, currency string) (Por
 func (c *Client) ListAccountLedger(id string,
 
 	p ...GetAccountLedgerParams) *Cursor {
-
 	paginationParams := PaginationParams{}
-
 	if len(p) > 0 {
-
 		paginationParams = p[0].Pagination
-
 	}
-
-	return NewCursor(c, "GET", fmt.Sprintf("/accounts/%s/ledger", id),
-
-		&paginationParams)
+	return NewCursor(c, "GET", fmt.Sprintf("/accounts/%s/ledger", id), &paginationParams)
 
 }
 
 func (c *Client) ListHolds(id string, p ...ListHoldsParams) *Cursor {
 
 	paginationParams := PaginationParams{}
-
 	if len(p) > 0 {
-
 		paginationParams = p[0].Pagination
-
 	}
-
-	return NewCursor(c, "GET", fmt.Sprintf("/accounts/%s/holds", id),
-
-		&paginationParams)
+	return NewCursor(c, "GET", fmt.Sprintf("/accounts/%s/holds", id), &paginationParams)
 
 }
 
@@ -147,7 +142,7 @@ type VaultBalances struct {
 }
 
 type PortfolioBalances struct {
-	Balances        Balances        `json:"balances"`
+	Balances        []Balances      `json:"balances"`
 	Type            string          `json:"type"`
 	TradingBalances TradingBalances `json:"trading_balances"`
 	VaultBalances   VaultBalances   `json:"vault_balances"`

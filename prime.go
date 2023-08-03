@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -41,14 +42,13 @@ func NewClient(primeURL, proURL, primeKey, primePass, primeSecret string) *Clien
 		HTTPClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
-		RetryCount: 0,
+		RetryCount: 5,
 	}
 
 	return &client
 }
 
-func (c *Client) Request(method string, apiType string, url string,
-	params, result interface{}) (res *http.Response, err error) {
+func (c *Client) Request(method string, apiType string, url string, params, result interface{}) (res *http.Response, err error) {
 	for i := 0; i < c.RetryCount+1; i++ {
 		retryDuration := time.Duration((math.Pow(2, float64(i))-1)/2*1000) * time.Millisecond
 		time.Sleep(retryDuration)
@@ -63,7 +63,6 @@ func (c *Client) Request(method string, apiType string, url string,
 
 	return res, err
 }
-
 
 func (c *Client) request(method string, apiType string, url string,
 	params, result interface{}) (res *http.Response, err error) {
@@ -140,6 +139,9 @@ func (c *Client) Headers(method, url, timestamp, data string) (map[string]string
 	h["X-CB-ACCESS-KEY"] = c.Key
 	h["X-CB-ACCESS-PASSPHRASE"] = c.Passphrase
 	h["X-CB-ACCESS-TIMESTAMP"] = timestamp
+
+	// Cannot have any query parameters in url otherwise will get invalid api key
+	url = strings.Split(url, "?")[0]
 
 	message := fmt.Sprintf(
 		"%s%s%s%s",

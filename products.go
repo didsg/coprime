@@ -10,29 +10,19 @@ import (
 )
 
 type PrimeProducts struct {
-    ID             string   `json:"id"`
-    BaseIncrement  string   `json:"base_increment"`
-    QuoteIncrement string   `json:"quote_increment"`
-    BaseMinSize    string   `json:"base_min_size"`
-    QuoteMinSize   string   `json:"quote_min_size"`
-    BaseMaxSize    string   `json:"base_max_size"`
-    QuoteMaxSize   string   `json:"quote_max_size"`
-    Permissions    []string `json:"permissions"`
+	ID             string   `json:"id"`
+	BaseIncrement  string   `json:"base_increment"`
+	QuoteIncrement string   `json:"quote_increment"`
+	BaseMinSize    string   `json:"base_min_size"`
+	QuoteMinSize   string   `json:"quote_min_size"`
+	BaseMaxSize    string   `json:"base_max_size"`
+	QuoteMaxSize   string   `json:"quote_max_size"`
+	Permissions    []string `json:"permissions"`
 }
-
-
-
-type Pagination struct {
-    NextCursor    string `json:"next_cursor"`
-    SortDirection string `json:"sort_direction"`
-    HasNext       bool   `json:"has_next"`
-}
-
-
 
 type PortfolioProducts struct {
-    Products   PrimeProducts   `json:"products"`
-    Pagination Pagination `json:"pagination"`
+	Products   []PrimeProducts       `json:"products"`
+	Pagination PrimePaginationParams `json:"pagination"`
 }
 
 type Product struct {
@@ -59,18 +49,18 @@ type Ticker struct {
 	TradeID int          `json:"trade_id,number"`
 	Price   string       `json:"price"`
 	Size    string       `json:"size"`
-	Time    time.Time         `json:"time,string"`
+	Time    time.Time    `json:"time,string"`
 	Bid     string       `json:"bid"`
 	Ask     string       `json:"ask"`
 	Volume  StringNumber `json:"volume"`
 }
 
 type Trade struct {
-	TradeID int    `json:"trade_id,number"`
-	Price   string `json:"price"`
-	Size    string `json:"size"`
-	Time    time.Time   `json:"time,string"`
-	Side    string `json:"side"`
+	TradeID int       `json:"trade_id,number"`
+	Price   string    `json:"price"`
+	Size    string    `json:"size"`
+	Time    time.Time `json:"time,string"`
+	Side    string    `json:"side"`
 }
 
 type HistoricRate struct {
@@ -196,13 +186,23 @@ func (e *HistoricRate) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (c *Client) GetAvailableProducts(portfolioID string) ([]PrimeProducts, error) {
+	var products PortfolioProducts
+	hasNext := true
+	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/products", portfolioID)
+	requestURL := baseRequestURL
 
-func (c *Client) GetAvailableProducts(portfolioID string) (PrimeProducts, error) {
-    var products PrimeProducts
-    requestURL := fmt.Sprintf("/v1/portfolios/%s/products", portfolioID)
-
-    _, err := c.Request("GET", "prime", requestURL, nil, &products)
-    return products, err
+	var allProducts []PrimeProducts
+	for hasNext {
+		_, err := c.Request("GET", "prime", requestURL, nil, &products)
+		if err != nil {
+			return nil, err
+		}
+		allProducts = append(allProducts, products.Products...)
+		hasNext = products.Pagination.HasNext
+		requestURL = fmt.Sprintf("%s?%s", baseRequestURL, Encode(products.Pagination))
+	}
+	return allProducts, nil
 }
 
 func (c *Client) GetBook(product string, level int) (Book, error) {

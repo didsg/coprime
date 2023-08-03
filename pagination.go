@@ -12,6 +12,12 @@ type PaginationParams struct {
 	Extra  map[string]string
 }
 
+type PrimePaginationParams struct {
+	NextCursor    string `json:"next_cursor"`
+	SortDirection string `json:"sort_direction"`
+	HasNext       bool   `json:"has_next"`
+}
+
 func (p *PaginationParams) Encode(direction string) string {
 	values := url.Values{}
 
@@ -51,5 +57,12 @@ func (p *PaginationParams) AddExtraParam(key, value string) {
 	p.Extra[key] = value
 }
 
+func Encode(p PrimePaginationParams) string {
+	values := url.Values{}
 
+	if p.HasNext {
+		values.Add("cursor", p.NextCursor)
+	}
 
+	return values.Encode()
+}
