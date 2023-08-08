@@ -52,7 +52,7 @@ type Ticker struct {
 	Time    time.Time    `json:"time,string"`
 	Bid     string       `json:"bid"`
 	Ask     string       `json:"ask"`
-	Volume  StringNumber `json:"volume"`
+	Volume  string       `json:"volume"`
 }
 
 type Trade struct {
