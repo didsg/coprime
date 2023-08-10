@@ -5,114 +5,95 @@ import (
 	"time"
 )
 
-type PostOrder struct {
-	Side             string `json:"side,omitempty"`
-	Type             string `json:"type,omitempty"`
-	BaseQuantity     string `json:"base_quantity,omitempty"`
-	LimitPrice       string `json:"limit_price,omitempty"`
-	PortfolioID      string `json:"portfolio_id,omitempty"`
-	ProductID        string `json:"product_id,omitempty"`
-	ClientOrderID    string `json:"client_order_id,omitempty"`
-	QuoteValue       string `json:"quote_value,omitempty"`
-	StartTime        string `json:"start_time,omitempty"`
-	ExpiryTime       string `json:"expiry_time,omitempty"`
-	TimeInForce      string `json:"time_in_force,omitempty"`
-	STPID            string `json:"stp_id,omitempty"`
-	DisplayQuoteSize string `json:"display_quote_size,omitempty"`
-	DisplayBaseSize  string `json:"display_base_size,omitempty"`
-	IsRaiseExact     bool   `json:"is_raise_exact,omitempty"`
+type ProOrder struct {
+	Type      string `json:"type"`
+	Size      string `json:"size,omitempty"`
+	Side      string `json:"side"`
+	ProductID string `json:"product_id"`
+	ClientOID string `json:"client_oid,omitempty"`
+	Stp       string `json:"stp,omitempty"`
+	Stop      string `json:"stop,omitempty"`
+	StopPrice string `json:"stop_price,omitempty"`
+	// Limit Order
+	Price       string `json:"price,omitempty"`
+	TimeInForce string `json:"time_in_force,omitempty"`
+	PostOnly    bool   `json:"post_only,omitempty"`
+	CancelAfter string `json:"cancel_after,omitempty"`
+	// Market Order
+	Funds          string `json:"funds,omitempty"`
+	SpecifiedFunds string `json:"specified_funds,omitempty"`
+	// Response Fields
+	ID            string `json:"id"`
+	Status        string `json:"status,omitempty"`
+	Settled       bool   `json:"settled,omitempty"`
+	DoneReason    string `json:"done_reason,omitempty"`
+	DoneAt        time.Time   `json:"done_at,string,omitempty"`
+	CreatedAt     time.Time   `json:"created_at,string,omitempty"`
+	FillFees      string `json:"fill_fees,omitempty"`
+	FilledSize    string `json:"filled_size,omitempty"`
+	ExecutedValue string `json:"executed_value,omitempty"`
 }
 
-type OrderID struct {
-	OrderID string `json:"order_id"`
-}
-
-type CancelOrderID struct {
-	ID string `json:"id"`
-}
-
-type CancelAllOrdersParams struct {
+type CancelAllProOrdersParams struct {
 	ProductID string
 }
 
-type ListOrdersParams struct {
+type ListProOrdersParams struct {
 	Status     string
 	ProductID  string
 	Pagination PaginationParams
 }
 
-func (c *Client) CreateOrder(newOrder *PostOrder, portfolioID string) (OrderID, error) {
-	var orderID OrderID
+func (c *Client) CreateOrder(newOrder *ProOrder) (ProOrder, error) {
+	var savedOrder ProOrder
 
-	url := fmt.Sprintf("/v1/portfolios/%s/order", portfolioID)
-	_, err := c.Request("POST", "prime", url, newOrder, &orderID)
-
-	return orderID, err
-}
-
-func (c *Client) CancelOrder(portfolioID string, orderID string) (CancelOrderID, error) {
-	var cancelOrderID CancelOrderID
-	url := fmt.Sprintf("/v1/portfolios/%s/orders/%s/cancel", portfolioID, orderID)
-	_, err := c.Request("POST", "prime", url, nil, &cancelOrderID)
-	return cancelOrderID, err
-}
-
-func (c *Client) GetOrder(portfolioID string, orderID string) (Order, error) {
-	var order GetOrder
-
-	url := fmt.Sprintf("/v1/portfolios/%s/orders/%s", portfolioID, orderID)
-	_, err := c.Request("GET", "prime", url, nil, &order)
-	return order.Order, err
-}
-
-func (c *Client) GetOpenOrders(portfolioID string, pair string) ([]Order, error) {
-	var openOrders OpenOrders
-	hasNext := true
-	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/open_orders?product_ids=%s", portfolioID, pair)
-	requestURL := baseRequestURL
-	var orders []Order
-	for hasNext {
-		_, err := c.Request("GET", "prime", requestURL, nil, &openOrders)
-		if err != nil {
-			return nil, err
-		}
-		orders = append(orders, openOrders.Orders...)
-		hasNext = openOrders.Pagination.HasNext
-		requestURL = fmt.Sprintf("%s?%s", baseRequestURL, Encode(openOrders.Pagination))
+	if len(newOrder.Type) == 0 {
+		newOrder.Type = "limit"
 	}
 
-	return orders, nil
-
+	url := fmt.Sprintf("/orders")
+	_, err := c.Request("POST", Pro, url, newOrder, &savedOrder)
+	return savedOrder, err
 }
 
-type Order struct {
-	ID                 string    `json:"id"`
-	UserID             string    `json:"user_id"`
-	PortfolioID        string    `json:"portfolio_id"`
-	ProductID          string    `json:"product_id"`
-	Side               string    `json:"side"`
-	ClientOrderID      string    `json:"client_order_id"`
-	Type               string    `json:"type"`
-	BaseQuantity       string    `json:"base_quantity"`
-	QuoteValue         string    `json:"quote_value"`
-	LimitPrice         string    `json:"limit_price"`
-	StartTime          time.Time `json:"start_time"`
-	ExpiryTime         time.Time `json:"expiry_time"`
-	Status             string    `json:"status"`
-	TimeInForce        string    `json:"time_in_force"`
-	CreatedAt          time.Time `json:"created_at"`
-	FilledQuantity     string    `json:"filled_quantity"`
-	FilledValue        string    `json:"filled_value"`
-	AverageFilledPrice string    `json:"average_filled_price"`
-	Commission         string    `json:"commission"`
-	ExchangeFee        string    `json:"exchange_fee"`
+func (c *Client) CancelProOrder(id string) error {
+	url := fmt.Sprintf("/orders/%s", id)
+	_, err := c.Request("DELETE", Pro, url, nil, nil)
+	return err
 }
 
-type OpenOrders struct {
-	Orders     []Order               `json:"orders"`
-	Pagination PrimePaginationParams `json:"pagination"`
+func (c *Client) CancelAllProOrders(p ...CancelAllProOrdersParams) ([]string, error) {
+	var orderIDs []string
+	url := "/orders"
+
+	if len(p) > 0 && p[0].ProductID != "" {
+		url = fmt.Sprintf("%s?product_id=%s", url, p[0].ProductID)
+	}
+
+	_, err := c.Request("DELETE", Pro, url, nil, &orderIDs)
+	return orderIDs, err
 }
 
-type GetOrder struct {
-	Order Order `json:"order"`
+func (c *Client) GetProOrder(id string) (ProOrder, error) {
+	var savedOrder ProOrder
+
+	url := fmt.Sprintf("/orders/%s", id)
+	_, err := c.Request("GET", Pro, url, nil, &savedOrder)
+	return savedOrder, err
+}
+
+func (c *Client) ListProOrders(p ...ListProOrdersParams) *Cursor {
+	paginationParams := PaginationParams{}
+	if len(p) > 0 {
+		paginationParams = p[0].Pagination
+		if p[0].Status != "" {
+			paginationParams.AddExtraParam("status", p[0].Status)
+		}
+		if p[0].ProductID != "" {
+			paginationParams.AddExtraParam("product_id", p[0].ProductID)
+		}
+	}
+
+	return NewCursor(c, "GET", fmt.Sprintf("/orders"),
+		&paginationParams)
 }

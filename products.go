@@ -194,7 +194,7 @@ func (c *Client) GetAvailableProducts(portfolioID string) ([]PrimeProducts, erro
 
 	var allProducts []PrimeProducts
 	for hasNext {
-		_, err := c.Request("GET", "prime", requestURL, nil, &products)
+		_, err := c.Request("GET", Prime, requestURL, nil, &products)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +209,7 @@ func (c *Client) GetBook(product string, level int) (Book, error) {
 	var book Book
 
 	requestURL := fmt.Sprintf("/products/%s/book?level=%d", product, level)
-	_, err := c.Request("GET", "pro", requestURL, nil, &book)
+	_, err := c.Request("GET", Pro, requestURL, nil, &book)
 	return book, err
 }
 
@@ -217,7 +217,7 @@ func (c *Client) GetTicker(product string) (Ticker, error) {
 	var ticker Ticker
 
 	requestURL := fmt.Sprintf("/products/%s/ticker", product)
-	_, err := c.Request("GET", "pro", requestURL, nil, &ticker)
+	_, err := c.Request("GET", Pro, requestURL, nil, &ticker)
 	return ticker, err
 }
 
@@ -236,7 +236,7 @@ func (c *Client) GetAllProducts() ([]Product, error) {
 	var products []Product
 
 	requestURL := fmt.Sprintf("/products")
-	_, err := c.Request("GET", "pro", requestURL, nil, &products)
+	_, err := c.Request("GET", Pro, requestURL, nil, &products)
 	return products, err
 }
 
@@ -268,13 +268,13 @@ func (c *Client) GetHistoricRates(product string,
 		requestURL = fmt.Sprintf("%s?%s", requestURL, values.Encode())
 	}
 
-	_, err := c.Request("GET", "pro", requestURL, nil, &historicRates)
+	_, err := c.Request("GET", Pro, requestURL, nil, &historicRates)
 	return historicRates, err
 }
 
 func (c *Client) GetStats(product string) (Stats, error) {
 	var stats Stats
 	requestURL := fmt.Sprintf("/products/%s/stats", product)
-	_, err := c.Request("GET", "pro", requestURL, nil, &stats)
+	_, err := c.Request("GET", Pro, requestURL, nil, &stats)
 	return stats, err
 }

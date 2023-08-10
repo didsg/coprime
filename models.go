@@ -1,19 +1,21 @@
 package coprime
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"log"
-	"math"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
+type ApiType int
+
+const (
+    Prime  ApiType = iota
+    Pro
+    Advanced
+    Sandbox
 )
 
+func (w ApiType) String() string {
+	return [...]string{"prime", "pro", "advanced", "sandbox"}[w-1]
+}
+
+func (w ApiType) EnumIndex() int {
+	return int(w)
+}
 
 
 type ServerTime struct {

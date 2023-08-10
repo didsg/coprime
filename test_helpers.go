@@ -8,16 +8,8 @@ import (
 )
 
 func NewTestClient() *Client {
-
-	client := NewClient()
-    // func NewClient(primeURL, proURL, primeKey, primePass, primeSecret string) *Client {
-
-
-	client.UpdateConfig(&ClientConfig{
-		BaseURL: "https://api-public.sandbox.pro.coinbase.com",
-	})
+	client := NewClient(keys{}, keys{}, keys{})
 	client.RetryCount = 2
-
 	return client
 }
 

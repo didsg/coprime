@@ -69,7 +69,7 @@ type ListHoldsParams struct {
 
 func (c *Client) GetPortfolios() (Portfolios, error) {
 	var portfolios Portfolios
-	_, err := c.Request("GET", "prime", "/v1/portfolios", nil, &portfolios)
+	_, err := c.Request("GET", Prime, "/v1/portfolios", nil, &portfolios)
 	return portfolios, err
 
 }
@@ -79,7 +79,7 @@ func (c *Client) GetPortfolio(portfolioID string) (Portfolio, error) {
 	var portfolio Portfolio
 	requestURL := fmt.Sprintf("/v1/portfolios/%s", portfolioID)
 
-	_, err := c.Request("GET", "prime", requestURL, nil, &portfolio)
+	_, err := c.Request("GET", Prime, requestURL, nil, &portfolio)
 	return portfolio, err
 }
 
@@ -91,7 +91,7 @@ func (c *Client) GetPortfolioBalances(portfolio_id string, currency ...string) (
 		ccy = fmt.Sprintf("&symbols=%s", currency[0])
 	}
 	url := fmt.Sprintf("/v1/portfolios/%s/balances?balance_type=TRADING_BALANCES%s", portfolio_id, ccy)
-	_, err := c.Request("GET", "prime", url, nil, &portfolio_balances)
+	_, err := c.Request("GET", Prime, url, nil, &portfolio_balances)
 	return portfolio_balances, err
 
 }
