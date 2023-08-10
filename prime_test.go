@@ -80,16 +80,15 @@ func TestGetOpenOrders(t *testing.T) {
 
 	openOrders, err := client.GetOpenOrders(portfolioID, pair)
 	if err != nil {
-		log.Fatal(err)
+        t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Open orders: %v", openOrders))
 
 	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Cancel order ID: %v", cancelOrderID))
-
 }
 
 func TestGetOrder(t *testing.T) {
@@ -103,13 +102,13 @@ func TestGetOrder(t *testing.T) {
 
 	order, err := client.GetOrder(portfolioID, orderID)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Found order: %v", order))
 
 	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Cancel order ID: %v", cancelOrderID))
 
@@ -127,7 +126,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 
 	products, err := client.GetAvailableProducts(portfolioID)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 
 	// Loop through the data and pull out one element
@@ -142,7 +141,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 
 	orderBook, err := client.GetBook(pair, 1)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 
 	// Get the current best side price and size for Leg 1.
@@ -150,11 +149,11 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 	sSidePrice := orderBook.Bids[0].Price
 	sidePrice, err := strconv.ParseFloat(sSidePrice, 64)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	sidePrice = sidePrice * 0.1
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	sSidePrice = strconv.FormatFloat(sidePrice, 'f', 2, 64)
 
@@ -168,7 +167,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 
 	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Cancel order ID: %v", cancelOrderID))
 }
@@ -178,7 +177,7 @@ func TestGetBalances(t *testing.T) {
 	portfolioBalances, err := client.GetPortfolioBalances(getPortfolioID())
 	for _, balances := range portfolioBalances.Balances {
 		if err != nil {
-			log.Fatalln(err)
+			t.Error(err)
 		}
 		if balances.Amount != "0" {
 			fmt.Println(fmt.Sprintf("Currency: %s, Balance: %v", balances.Symbol, balances.Amount))
@@ -190,7 +189,7 @@ func TestGetPortfolios(t *testing.T) {
 	client := getClient()
 	portfolios, err := client.GetPortfolios()
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
 	}
 	fmt.Println(portfolios)
 }
@@ -200,7 +199,7 @@ func TestTime(t *testing.T) {
 
 	time, err := client.GetTime()
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
 	}
 	fmt.Println(time)
 }
@@ -210,7 +209,7 @@ func TestGetPortfolio(t *testing.T) {
 	portfolioID := getPortfolioID()
 	portfolio, err := client.GetPortfolio(portfolioID)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(portfolio)
 }
@@ -220,7 +219,7 @@ func TestGetProducts(t *testing.T) {
 	portfolioID := getPortfolioID()
 	products, err := client.GetAvailableProducts(portfolioID)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	// fmt.Println(products)
 	// Loop through the data and pull out one element
@@ -236,7 +235,7 @@ func TestGetBook(t *testing.T) {
 	client := getClient()
 	products, err := client.GetAllProducts()
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 
 	// Loop through the data and pull out one element
@@ -246,7 +245,7 @@ func TestGetBook(t *testing.T) {
 
 			book, err := client.GetBook(product.ID, 1)
 			if err != nil {
-				log.Fatal(err)
+				t.Error(err)
 			}
 			fmt.Println(book)
 			break
