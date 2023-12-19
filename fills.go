@@ -1,30 +1,42 @@
 package coprime
 
-import "fmt"
+import (
+	"fmt"
+)
 
-//	func (c *Client) GetPortfolio(portfolioID string) (Portfolio, error) {
-//		// var portfolio Portfolio
-//		var portfolio Portfolio
-//		requestURL := fmt.Sprintf("/v1/portfolios/%s", portfolioID)
-//
-//		_, err := c.Request("GET", "prime", requestURL, nil, &portfolio)
-//		return portfolio, err
-//	}
 type Fill struct {
+	Commission     string `json:"commission"`
+	FilledQuantity string `json:"filled_quantity"`
+	FilledValue    string `json:"filled_value"`
+	ID             string `json:"id"`
+	OrderID        string `json:"order_id"`
+	Price          string `json:"price"`
+	ProductID      string `json:"product_id"`
+	Side           string `json:"side"`
+	Time           string `json:"time"`
+	Venue          string `json:"venue"`
 }
 
-func (c *Client) GetFills(orderID, portfolioID string) (OrderID, error) {
-
-	url := fmt.Sprintf("/v1/portfolios/%s/orders/%s/fills", portfolioID, orderID)
-	_, err := c.Request("POST", "prime", url, newOrder, &orderID)
-
-	// return orderID, err
+type OrderFills struct {
+	Fills      []Fill
+	Pagination PrimePaginationParams
 }
 
-// {'fills':
-//      [
-//          {'id': '3c337809-3af2-4891-a069-c3546c74c4ca', 'order_id': '5ddcc19f-a238-44ca-86ee-eff513fcceab', 'product_id': 'BTC-USD', 'side': 'SELL', 'filled_quantity': '0.00238697', 'filled_value': '99.42507517875701', 'price': '41653.257133', 'time': '2023-12-18T20:13:11.837Z', 'commission': '0.0497125375893785', 'venue': 'OTC'}
-//      ],
-//          'pagination':
-//       {'next_cursor': '', 'sort_direction': 'DESC', 'has_next': False}
-// }
+func (c *Client) GetFills(orderID, portfolioID string) ([]Fill, error) {
+	var oFills OrderFills
+	hasNext := true
+	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/orders/%s/fills", portfolioID, orderID)
+	requestURL := baseRequestURL
+
+	var fills []Fill
+	for hasNext {
+		_, err := c.Request("GET", "prime", requestURL, nil, &oFills)
+		if err != nil {
+			return nil, err
+		}
+		fills = append(fills, oFills.Fills...)
+		hasNext = oFills.Pagination.HasNext
+		requestURL = fmt.Sprintf("%s?%s", baseRequestURL, Encode(oFills.Pagination))
+	}
+	return fills, nil
+}

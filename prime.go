@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -112,7 +111,7 @@ func (c *Client) request(method string, apiType string, url string,
 
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		return res, err
 	}
 	_ = res.Body.Close()
 	if res.StatusCode != 200 {

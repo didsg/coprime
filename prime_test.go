@@ -43,6 +43,15 @@ func getPortfolioID() string {
 	return portfolioID
 }
 
+func getOrderID() string {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	orderID := os.Getenv("ORDER_ID")
+	return orderID
+}
+
 func addOrder(client *Client, pair string, direction string, orderType string, size string, args map[string]string) string {
 	price := args["price"]
 	clientOrderID := uuid.New().String()
@@ -69,6 +78,22 @@ func addOrder(client *Client, pair string, direction string, orderType string, s
 	return orderID.OrderID
 }
 
+func TestGetFills(t *testing.T) {
+	client := getClient()
+	portfolioID := getPortfolioID()
+	orderID := getOrderID()
+
+	fills, err := client.GetFills(orderID, portfolioID)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(fills) != 1 {
+		t.Errorf("incorrect fill length")
+	}
+	for _, fill := range fills {
+		fmt.Println(fill)
+	}
+}
 func TestGetOpenOrders(t *testing.T) {
 	client := getClient()
 	portfolioID := getPortfolioID()
@@ -80,7 +105,7 @@ func TestGetOpenOrders(t *testing.T) {
 
 	openOrders, err := client.GetOpenOrders(portfolioID, pair)
 	if err != nil {
-        t.Error(err)
+		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Open orders: %v", openOrders))
 
