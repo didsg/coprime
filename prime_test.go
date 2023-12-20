@@ -83,7 +83,7 @@ func TestGetFills(t *testing.T) {
 	portfolioID := getPortfolioID()
 	orderID := getOrderID()
 
-	fills, err := client.GetFills(orderID, portfolioID)
+	fills, err := client.GetFills(portfolioID, orderID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -91,7 +91,7 @@ func TestGetFills(t *testing.T) {
 		t.Errorf("incorrect fill length")
 	}
 	for _, fill := range fills {
-		fmt.Println(fill)
+		log.Println(fill)
 	}
 }
 func TestGetOpenOrders(t *testing.T) {
