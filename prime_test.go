@@ -70,7 +70,7 @@ func addOrder(client *Client, pair string, direction string, orderType string, s
 		TimeInForce:   TIME_IN_FORCE,
 		ExpiryTime:    sExpiryTime,
 	}
-	orderID, err := client.CreateOrder(&order, getPortfolioID())
+	orderID, err := client.CreateOrder(&order, getPortfolioID(), "prime")
 	fmt.Println(fmt.Sprintf("Order %v (%s) submitted for pair %s and will expire at %s", clientOrderID, orderID, pair, sExpiryTime))
 	if err != nil {
 		log.Fatal(err)
@@ -83,7 +83,7 @@ func TestGetFills(t *testing.T) {
 	portfolioID := getPortfolioID()
 	orderID := getOrderID()
 
-	fills, err := client.GetFills(portfolioID, orderID)
+	fills, err := client.GetFills("prime", portfolioID, orderID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -103,13 +103,13 @@ func TestGetOpenOrders(t *testing.T) {
 
 	orderID := addOrder(client, pair, "BUY", "LIMIT", "0.00016", args)
 
-	openOrders, err := client.GetOpenOrders(portfolioID, pair)
+	openOrders, err := client.GetOpenOrders(portfolioID, pair, "prime")
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Open orders: %v", openOrders))
 
-	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
+	cancelOrderID, err := client.CancelOrder(portfolioID, orderID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -125,13 +125,13 @@ func TestGetOrder(t *testing.T) {
 
 	orderID := addOrder(client, pair, "BUY", "LIMIT", "0.00016", args)
 
-	order, err := client.GetOrder(portfolioID, orderID)
+	order, err := client.GetOrder(portfolioID, orderID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println(fmt.Sprintf("Found order: %v", order))
 
-	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
+	cancelOrderID, err := client.CancelOrder(portfolioID, orderID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -149,7 +149,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 
 	var tradeSize string
 
-	products, err := client.GetAvailableProducts(portfolioID)
+	products, err := client.GetAvailableProducts(portfolioID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -190,7 +190,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 	fmt.Println("Sleeping for 5 seconds ...")
 	time.Sleep(5 * time.Second)
 
-	cancelOrderID, err := client.CancelOrder(portfolioID, orderID)
+	cancelOrderID, err := client.CancelOrder(portfolioID, orderID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -199,7 +199,7 @@ func TestPlaceOffMarketOrderAndCancel(t *testing.T) {
 
 func TestGetBalances(t *testing.T) {
 	client := getClient()
-	portfolioBalances, err := client.GetPortfolioBalances(getPortfolioID())
+	portfolioBalances, err := client.GetPortfolioBalances(getPortfolioID(), "prime")
 	for _, balances := range portfolioBalances.Balances {
 		if err != nil {
 			t.Error(err)
@@ -212,7 +212,7 @@ func TestGetBalances(t *testing.T) {
 
 func TestGetPortfolios(t *testing.T) {
 	client := getClient()
-	portfolios, err := client.GetPortfolios()
+	portfolios, err := client.GetPortfolios("prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -232,7 +232,7 @@ func TestTime(t *testing.T) {
 func TestGetPortfolio(t *testing.T) {
 	client := getClient()
 	portfolioID := getPortfolioID()
-	portfolio, err := client.GetPortfolio(portfolioID)
+	portfolio, err := client.GetPortfolio(portfolioID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
@@ -242,7 +242,7 @@ func TestGetPortfolio(t *testing.T) {
 func TestGetProducts(t *testing.T) {
 	client := getClient()
 	portfolioID := getPortfolioID()
-	products, err := client.GetAvailableProducts(portfolioID)
+	products, err := client.GetAvailableProducts(portfolioID, "prime")
 	if err != nil {
 		t.Error(err)
 	}
