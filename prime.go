@@ -51,7 +51,6 @@ func (c *Client) Request(method string, apiType string, url string, params, resu
 	for i := 0; i < c.RetryCount+1; i++ {
 		retryDuration := time.Duration((math.Pow(2, float64(i))-1)/2*1000) * time.Millisecond
 		time.Sleep(retryDuration)
-
 		res, err = c.request(method, apiType, url, params, result)
 		if res != nil && res.StatusCode == 429 {
 			continue
@@ -59,7 +58,6 @@ func (c *Client) Request(method string, apiType string, url string, params, resu
 			break
 		}
 	}
-
 	return res, err
 }
 

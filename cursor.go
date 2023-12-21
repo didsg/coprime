@@ -25,12 +25,12 @@ func NewCursor(client *Client, method, url string, paginationParams *PaginationP
 
 }
 
-func (c *Cursor) Page(i interface{}, direction string) error {
+func (c *Cursor) Page(i interface{}, direction string, exchange string) error {
 	url := c.URL
 	if c.Pagination.Encode(direction) != "" {
 		url = fmt.Sprintf("%s?%s", c.URL, c.Pagination.Encode(direction))
 	}
-	res, err := c.Client.Request(c.Method, "pro", url, c.Params, i)
+	res, err := c.Client.Request(c.Method, exchange, url, c.Params, i)
 	if err != nil {
 		c.HasMore = false
 		return err
@@ -44,10 +44,10 @@ func (c *Cursor) Page(i interface{}, direction string) error {
 	return nil
 }
 
-func (c *Cursor) NextPage(i interface{}) error {
-	return c.Page(i, "next")
+func (c *Cursor) NextPage(i interface{}, exchange string) error {
+	return c.Page(i, "next", exchange)
 }
 
-func (c *Cursor) PrevPage(i interface{}) error {
-	return c.Page(i, "prev")
+func (c *Cursor) PrevPage(i interface{}, exchange string) error {
+	return c.Page(i, "prev", exchange)
 }

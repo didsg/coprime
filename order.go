@@ -41,38 +41,38 @@ type ListOrdersParams struct {
 	Pagination PaginationParams
 }
 
-func (c *Client) CreateOrder(newOrder *PostOrder, portfolioID string) (OrderID, error) {
+func (c *Client) CreateOrder(newOrder *PostOrder, portfolioID, exchange string) (OrderID, error) {
 	var orderID OrderID
 
 	url := fmt.Sprintf("/v1/portfolios/%s/order", portfolioID)
-	_, err := c.Request("POST", "prime", url, newOrder, &orderID)
+	_, err := c.Request("POST", exchange, url, newOrder, &orderID)
 
 	return orderID, err
 }
 
-func (c *Client) CancelOrder(portfolioID string, orderID string) (CancelOrderID, error) {
+func (c *Client) CancelOrder(portfolioID string, orderID string, exchange string) (CancelOrderID, error) {
 	var cancelOrderID CancelOrderID
 	url := fmt.Sprintf("/v1/portfolios/%s/orders/%s/cancel", portfolioID, orderID)
-	_, err := c.Request("POST", "prime", url, nil, &cancelOrderID)
+	_, err := c.Request("POST", exchange, url, nil, &cancelOrderID)
 	return cancelOrderID, err
 }
 
-func (c *Client) GetOrder(portfolioID string, orderID string) (Order, error) {
+func (c *Client) GetOrder(portfolioID string, orderID string, exchange string) (Order, error) {
 	var order GetOrder
 
 	url := fmt.Sprintf("/v1/portfolios/%s/orders/%s", portfolioID, orderID)
-	_, err := c.Request("GET", "prime", url, nil, &order)
+	_, err := c.Request("GET", exchange, url, nil, &order)
 	return order.Order, err
 }
 
-func (c *Client) GetOpenOrders(portfolioID string, pair string) ([]Order, error) {
+func (c *Client) GetOpenOrders(portfolioID string, pair string, exchange string) ([]Order, error) {
 	var openOrders OpenOrders
 	hasNext := true
 	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/open_orders?product_ids=%s", portfolioID, pair)
 	requestURL := baseRequestURL
 	var orders []Order
 	for hasNext {
-		_, err := c.Request("GET", "prime", requestURL, nil, &openOrders)
+		_, err := c.Request("GET", exchange, requestURL, nil, &openOrders)
 		if err != nil {
 			return nil, err
 		}

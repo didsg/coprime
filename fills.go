@@ -22,7 +22,7 @@ type OrderFills struct {
 	Pagination PrimePaginationParams
 }
 
-func (c *Client) GetFills(portfolioID, orderID string) ([]Fill, error) {
+func (c *Client) GetFills(exchange, portfolioID, orderID string) ([]Fill, error) {
 	var oFills OrderFills
 	hasNext := true
 	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/orders/%s/fills", portfolioID, orderID)
@@ -30,7 +30,7 @@ func (c *Client) GetFills(portfolioID, orderID string) ([]Fill, error) {
 
 	var fills []Fill
 	for hasNext {
-		_, err := c.Request("GET", "prime", requestURL, nil, &oFills)
+		_, err := c.Request("GET", exchange, requestURL, nil, &oFills)
 		if err != nil {
 			return nil, err
 		}

@@ -186,7 +186,7 @@ func (e *HistoricRate) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) GetAvailableProducts(portfolioID string) ([]PrimeProducts, error) {
+func (c *Client) GetAvailableProducts(portfolioID string, exchange string) ([]PrimeProducts, error) {
 	var products PortfolioProducts
 	hasNext := true
 	baseRequestURL := fmt.Sprintf("/v1/portfolios/%s/products", portfolioID)
@@ -194,7 +194,7 @@ func (c *Client) GetAvailableProducts(portfolioID string) ([]PrimeProducts, erro
 
 	var allProducts []PrimeProducts
 	for hasNext {
-		_, err := c.Request("GET", "prime", requestURL, nil, &products)
+		_, err := c.Request("GET", exchange, requestURL, nil, &products)
 		if err != nil {
 			return nil, err
 		}

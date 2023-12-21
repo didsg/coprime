@@ -67,23 +67,23 @@ type ListHoldsParams struct {
 	Pagination PaginationParams
 }
 
-func (c *Client) GetPortfolios() (Portfolios, error) {
+func (c *Client) GetPortfolios(exchange string) (Portfolios, error) {
 	var portfolios Portfolios
-	_, err := c.Request("GET", "prime", "/v1/portfolios", nil, &portfolios)
+	_, err := c.Request("GET", exchange, "/v1/portfolios", nil, &portfolios)
 	return portfolios, err
 
 }
 
-func (c *Client) GetPortfolio(portfolioID string) (Portfolio, error) {
+func (c *Client) GetPortfolio(portfolioID string, exchange string) (Portfolio, error) {
 	// var portfolio Portfolio
 	var portfolio Portfolio
 	requestURL := fmt.Sprintf("/v1/portfolios/%s", portfolioID)
 
-	_, err := c.Request("GET", "prime", requestURL, nil, &portfolio)
+	_, err := c.Request("GET", exchange, requestURL, nil, &portfolio)
 	return portfolio, err
 }
 
-func (c *Client) GetPortfolioBalances(portfolio_id string, currency ...string) (PortfolioBalances, error) {
+func (c *Client) GetPortfolioBalances(portfolio_id string, exchange string, currency ...string) (PortfolioBalances, error) {
 
 	var portfolio_balances PortfolioBalances
 	ccy := ""
@@ -91,14 +91,12 @@ func (c *Client) GetPortfolioBalances(portfolio_id string, currency ...string) (
 		ccy = fmt.Sprintf("&symbols=%s", currency[0])
 	}
 	url := fmt.Sprintf("/v1/portfolios/%s/balances?balance_type=TRADING_BALANCES%s", portfolio_id, ccy)
-	_, err := c.Request("GET", "prime", url, nil, &portfolio_balances)
+	_, err := c.Request("GET", exchange, url, nil, &portfolio_balances)
 	return portfolio_balances, err
 
 }
 
-func (c *Client) ListAccountLedger(id string,
-
-	p ...GetAccountLedgerParams) *Cursor {
+func (c *Client) ListAccountLedger(id string, p ...GetAccountLedgerParams) *Cursor {
 	paginationParams := PaginationParams{}
 	if len(p) > 0 {
 		paginationParams = p[0].Pagination
