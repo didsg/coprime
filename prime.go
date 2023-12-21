@@ -93,7 +93,7 @@ func (c *Client) request(method string, apiType string, url string,
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
-	h, err := c.Headers(method, url, timestamp, string(data))
+	h, err := c.Headers(method, url, timestamp, string(data), apiType)
 	if err != nil {
 		return res, err
 	}
@@ -130,29 +130,55 @@ func (c *Client) request(method string, apiType string, url string,
 }
 
 // Headers generates a map that can be used as headers to authenticate a request
-func (c *Client) Headers(method, url, timestamp, data string) (map[string]string, error) {
+func (c *Client) Headers(method, url, timestamp, data, apiType string) (map[string]string, error) {
 	h := make(map[string]string)
 
-	h["X-CB-ACCESS-KEY"] = c.Key
-	h["X-CB-ACCESS-PASSPHRASE"] = c.Passphrase
-	h["X-CB-ACCESS-TIMESTAMP"] = timestamp
+	switch apiType {
+	case "pro":
+		h["CB-ACCESS-KEY"] = c.Key
+		h["CB-ACCESS-PASSPHRASE"] = c.Passphrase
+		h["CB-ACCESS-TIMESTAMP"] = timestamp
 
-	// Cannot have any query parameters in url otherwise will get invalid api key
-	url = strings.Split(url, "?")[0]
+		// Cannot have any query parameters in url otherwise will get invalid api key
+		url = strings.Split(url, "?")[0]
 
-	message := fmt.Sprintf(
-		"%s%s%s%s",
-		timestamp,
-		method,
-		url,
-		data,
-	)
+		message := fmt.Sprintf(
+			"%s%s%s%s",
+			timestamp,
+			method,
+			url,
+			data,
+		)
 
-	sig, err := generateSig(message, c.Secret)
-	if err != nil {
-		return nil, err
+		sig, err := generateSig(message, c.Secret)
+		if err != nil {
+			return nil, err
+		}
+		h["CB-ACCESS-SIGN"] = sig
+	case "prime":
+		h["X-CB-ACCESS-KEY"] = c.Key
+		h["X-CB-ACCESS-PASSPHRASE"] = c.Passphrase
+		h["X-CB-ACCESS-TIMESTAMP"] = timestamp
+
+		// Cannot have any query parameters in url otherwise will get invalid api key
+		url = strings.Split(url, "?")[0]
+
+		message := fmt.Sprintf(
+			"%s%s%s%s",
+			timestamp,
+			method,
+			url,
+			data,
+		)
+
+		sig, err := generateSig(message, c.Secret)
+		if err != nil {
+			return nil, err
+		}
+		h["X-CB-ACCESS-SIGNATURE"] = sig
+	default:
+		return nil, errors.New("Invalid api type, please use pro or prime")
 	}
-	h["X-CB-ACCESS-SIGNATURE"] = sig
 	return h, nil
 }
 
